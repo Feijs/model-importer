@@ -92,7 +92,7 @@ class ModelImporterTest extends MITestCase
         $this->file_importer->shouldReceive('load')->once()->with('dir', m::any());
         
         /* Execution */
-        $this->model_importer->loadFile($this->file);
+        $this->model_importer->loadFile(['file' => $this->file]);
     }
 
     public function testSetTopModel()
@@ -128,7 +128,7 @@ class ModelImporterTest extends MITestCase
 
         /* Expectation */  
         $this->model_importer->shouldReceive('initialized')->once()->andReturn(true);
-        $this->model_importer->shouldReceive('loadFile')->once()->with($this->file);
+        $this->model_importer->shouldReceive('loadFile')->once()->with($this->sample_input);
 
         $validator_instance = m::mock('Illuminate\Validation\Validator');
         $validator_instance->shouldReceive('fails')->once()->andReturn(false);

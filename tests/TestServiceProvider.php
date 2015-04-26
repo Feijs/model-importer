@@ -16,7 +16,8 @@ class TestServiceProvider extends MITestCase
         $app = m::mock('Illuminate\Foundation\Application');
         $provider = new ModelImporterServiceProvider($app);
 
-        $this->assertCount(1, $provider->provides());
+        $this->assertCount(2, $provider->provides());
         $this->assertContains('model-importer', $provider->provides());
+        $this->assertContains('model-importer.distributor', $provider->provides());
     }
 }
