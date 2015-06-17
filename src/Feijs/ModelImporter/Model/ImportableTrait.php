@@ -31,4 +31,24 @@ trait ImportableTrait
 		return in_array($key, $this->getDates());
 	}
 
+	/*----------------------------------------------------
+	 * Temp fix issue from Laravel-Model-Validation
+	 */
+
+    /**
+     * Prepare the instance for serialization.
+     *
+     * @return array
+     */
+    public function __sleep()
+    {
+    	$this->validator = null;
+        return array_keys(get_object_vars($this));
+    }
+
+    public function __wakeup()
+    {
+        $this->validator = \App::make('validator');
+    }
+
 }

@@ -86,6 +86,8 @@ class ModelImporter extends AbstractModelImporter
 
         $this->num_imported += $this->importModels();
 
+        $this->gatherErrors();
+
         return true;
     }
 
@@ -158,7 +160,6 @@ class ModelImporter extends AbstractModelImporter
                 //Import parents before saving
                 foreach($this->parents as $parent) {
                     $parent->importModelFromRow($row, $model_instance);
-                    $this->errorMessageBag->merge($parent->errors());
                 }
 
                 if(!$model_instance->save()) 
@@ -170,7 +171,6 @@ class ModelImporter extends AbstractModelImporter
                 //Import children after saving
                 foreach($this->children as $child) {
                     $child->importModelFromRow($row, $model_instance);
-                    $this->errorMessageBag->merge($child->errors());
                 }
                 $success++;
             }

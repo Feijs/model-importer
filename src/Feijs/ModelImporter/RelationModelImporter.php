@@ -104,11 +104,9 @@ class RelationModelImporter extends AbstractModelImporter
             
             foreach($this->parents as $parent) {
                 $parent->importModelFromRow($row, $model_instance);
-                $this->errorMessageBag->merge($parent->errors());
             }
 
-            if(!$model_instance->save()) 
-            { 
+            if(!$model_instance->save()) { 
                 $this->errorMessageBag->merge($model_instance->getErrors());
                 return null;
             }
@@ -127,7 +125,6 @@ class RelationModelImporter extends AbstractModelImporter
 
             foreach($this->children as $child) {
                 $child->importModelFromRow($row, $model_instance);
-                $this->errorMessageBag->merge($child->errors());
             }
         }
 
@@ -148,5 +145,4 @@ class RelationModelImporter extends AbstractModelImporter
     }
 
     public function isParent() { return $this->is_parent; }
- 
 }

@@ -530,5 +530,18 @@ abstract class AbstractModelImporter
     {
         $this->errorMessageBag->add($key, $message);
     }
+
+    public function gatherErrors()
+    {
+        foreach($this->parents as $parent) {
+            $parent->gatherErrors();
+            $this->errorMessageBag->merge($parent->errors());
+        }
+
+        foreach($this->children as $child) {
+            $child->gatherErrors();
+            $this->errorMessageBag->merge($child->errors());
+        }
+    }
     
 }
