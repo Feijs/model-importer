@@ -41,6 +41,11 @@ class ModelImporterServiceProvider extends ServiceProvider {
         {
             return $this->app->make('Feijs\ModelImporter\ModelImporter');
         });
+
+        $this->app->bind('model-importer.distributor', function ($app)
+        {
+            return $this->app->make('Feijs\ModelImporter\ModelImporter\Queue\Distributor');
+        });
 	}
 
 	/**
@@ -50,7 +55,7 @@ class ModelImporterServiceProvider extends ServiceProvider {
 	 */
 	public function provides()
 	{
-		return array('model-importer');
+		return array('model-importer', 'model-importer.distributor');
 	}
 
 }

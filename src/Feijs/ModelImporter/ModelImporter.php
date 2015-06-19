@@ -8,6 +8,8 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Maatwebsite\Excel\Excel as FileImporter;
 use Feijs\ModelImporter\Model\ImportableInterface as ImportableModel;
 
+use Symfony\Component\HttpFoundation\File\File;
+
 /**
  * ModelImporter class
  *
@@ -76,7 +78,7 @@ class ModelImporter extends AbstractModelImporter
         $this->setOverwrite($input['overwrite']);
 
         //Initial load
-        $this->loadFile($input['file']);
+        $this->loadFile($input);
 
         //Map columns based on file input
         $this->mapColumnNames($input);
@@ -121,13 +123,21 @@ class ModelImporter extends AbstractModelImporter
     }
 
     /**
-     * Set and load from new input file
+     * Load from input file
      * @param UploadedFile $file
      */
-    public function loadFile(UploadedFile $file)
+    public function loadFile($input)
     {
-        $this->input_file = $file;
-        $this->loaded_data = $this->file_importer->load($file->getRealPath(), $this->encoding);
+        //Select correct path based on input
+        if(array_key_exists('file', $input)) {
+            $path = $input['file']->getRealPath();
+        }
+        elseif(array_key_exists('path', $input)) {
+            $file = new File($input['path']);
+            $path = $file->getRealPath();
+        }
+
+        $this->loaded_data = $this->file_importer->load($path, $this->encoding);
     }
 
     /** 
@@ -188,7 +198,8 @@ class ModelImporter extends AbstractModelImporter
     protected function getValidationRules() 
     {
         $rules = parent::getValidationRules();
-        $rules['file'] = 'required|mimes:xlsx,xls,csv,txt';     //valid file types
+        $rules['file'] = 'required_without:path|mimes:xlsx,xls,csv,txt';     //valid file types
+        $rules['path'] = 'required_without:file';     //valid file types
             
         return $rules;
     }
