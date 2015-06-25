@@ -23,12 +23,6 @@ use Symfony\Component\HttpFoundation\File\File;
 class ModelImporter extends AbstractModelImporter
 {
     /** 
-     * Input file instance
-     * @var UploadedFile
-     */
-	protected $input_file;
-
-    /** 
      * Loaded row data
      * @var RowCollection
      */

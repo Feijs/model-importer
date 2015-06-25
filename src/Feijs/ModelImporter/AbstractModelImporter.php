@@ -14,8 +14,6 @@ use Feijs\ModelImporter\Model\ImportableInterface as ImportableModel;
  * Generic functionality for importing Eloquent Models from
  *  input files (using ExcelFile)
  *
- * @todo prepend model name slug to attributes from input (Form)
- *
  * @package    Feijs/ModelImporter
  * @author     Mike Feijs <mfeijs@gmail.com>
  * @copyright  (c) 2015, Mike Feijs
@@ -300,6 +298,13 @@ abstract class AbstractModelImporter
         return $model_instance;
     }
 
+    /** 
+     * Get the first record matching the attributes or instantiate it
+     * 
+     * Either match on complete set (default) or on any single attribute
+     *
+     * @param array $match_data
+     */
     protected function firstOrNew($match_data)
     {
         //Find an existing instance, or create a new one
@@ -352,6 +357,13 @@ abstract class AbstractModelImporter
         return $model_instance;
     }
 
+    /** 
+     * Inject a set of related data
+     * @param Collection $data
+     * @param string $foreign_key
+     * @param string $local_key
+     * @param string[] $local_columns
+     */
     public function injectData($data, $foreign_key, $local_key, $local_columns)
     {
         $this->injected_data = $data->keyBy($foreign_key)->toArray();
@@ -478,6 +490,10 @@ abstract class AbstractModelImporter
         return array_merge($this->parents, $this->children); 
     }
 
+    /**
+     * Set whether to match on complete set of attributes
+     * @param boolean
+     */
     public function setSetMatching($value) { $this->set_matching = $value; }
 
     /*----------------------------
@@ -531,6 +547,10 @@ abstract class AbstractModelImporter
         $this->errorMessageBag->add($key, $message);
     }
 
+    /** 
+     * Gather and merge import errors from 
+     *  related model importers
+     */
     public function gatherErrors()
     {
         foreach($this->parents as $parent) {
