@@ -4,9 +4,10 @@ This package aims to provide a flexible and reusable solution to import Laravel 
 
 ## Features
 
-* Couple column titles to model attributes from user input.
-* Import related models from one or multiple data files
-* Queued importing
+* Simple & direct import
+* Match **column titles** to **model attributes**
+* Import related models
+* Queued importing for multiple files
 
 ## Installation
 
@@ -35,163 +36,178 @@ Add the ServiceProvider to the providers in `config\app.php`
 
 ### Importable models
 
-To allow a model to be imported, it should implement `Model\ImportableInterface`
-
-```php
-use Feijs\ModelImporter\Model\ImportableInterface as ImportableModel;
-
-class SomeModel implements ImportableModel
-```
-
-Some of the interface functions have a default implementation in `Model\ImportableTrait`
+Any model which can be imported should implement `Model\ImportableInterface` and use `Model\ImportableTrait`
 
 ```php
 use Feijs\ModelImporter\Model\ImportableTrait as ImportableModelTrait;
 
-class SomeModel implements ImportableModel
+class Student extends Eloquent implements ImportableModel
 {
 	use ImportableModelTrait;
 }
 ```
 
-Functions which should be implemented:
+##### Attributes
 
-##### Matching attributes
+Imported data is matched with existing data on a set of **match attributes**. These should be returned by the `getMatchAttributes` method.
 
 ```php
-	/**
-	 * Return the set of attributes which should be
-	 *  imported and which are used to match 
-	 *  existing models on
-	 * @return string[]
-	 */
 	public function getMatchAttributes() 
 	{ 
-		return ['unique_column1', 'unique_column2'];
+		return ['student_id', 'phonenumber'];
 	}
-
-	/** These attributes should be included in the fillable array */
-	public $fillable = ['unique_column1', 'unique_column2', '...'];
 ```
 
-##### Non-matching attributes
+These **match attributes** should be mass assignable, and thus be included in the `fillable` array
 
 ```php
-	/**
-	 * Return the set of attributes which should be
-	 *  imported, but not necessarily unique
-	 * @return string[]
-	 */
+	public $fillable = ['student_id', 'phonenumber', '...'];
+```
+
+Any attributes which should be importable, but not distict, should be returned by the `getImportAttributes`.
+These **import attributes** do not necassarily need to be included in the `fillable` array.
+
+```php
 	public function getImportAttributes()
 	{ 
-		return ['other', 'attributes', 'which', 'do', 'not', 'have', 'to', 'be', 'unique'];
+		return ['name', 'email', 'street', 'zipcode', 'city'];
 	}		
 ```
 
-##### Importable relations
+##### Relations
 
-The following relations may be imported: `HasOne`, `HasMany`, `BelongsTo`, `BelongsToMany`
+To import relation data, or link the newly imported models to existing relations, you can specify relations which should be imported. 
+These should be returned by the `getImportRelations` method. Note that any models specified here should implement `Model\ImportableInterface` as well.
+
+The following relations may be imported: `HasOne`, `HasMany`, `BelongsTo`, `BelongsToMany`.
 
 ```php
-    public function related_model(){
-        return $this->hasMany('RelatedModel');
+    public function bankAccount(){
+        return $this->hasMany('BankAccount');
     }
 
-	/* ... */
-
-	public function getImportRelations() { return ['related_model']; }
+	public function getImportRelations() { return ['bankAccount']; }
 ```
 
-### Controller
+### Import functionality
 
-Example controller for importing a single file per request
+#### Initialisation
 
 ```php
-	use Feijs\ModelImporter\ModelImporter;
-
-	/** ... */
-	class ImportController extends \BaseController 
-	{
-		/** Base view */
-		protected $layout = "layouts.main";
-
-		protected $importer;
-
-		/**
-	     * Controller constructor
-	     *
-	     * Initialize the importer
-	     */
-		public function __construct(ModelImporter $importer, SomeModel $importable_model)
-		{
-	    	$this->importer = $importer;
-	    	$this->importer->setModel($importable_model);
-		}
-		
-		/**
-		 * Index of import
-		 *
-		 * @return Response
-		 */
-		public function getIndex()
-		{
-			$this->layout->content = View::make('import');
-		}
-
-		/**
-		 * Import csv file
-		 *
-		 * @return Response
-		 */
-		public function postIndex()
-		{
-			$this->importer->setSettings(Input::only('csv', 'encoding'));
-			
-			if( !$this->importer->import(Input::except('csv', 'encoding')) )
-				return Redirect::to('import')->withErrors($this->importer->validationErrors(), 'validation');
-
-			return Redirect::to('import')
-							 ->withErrors($this->importer->errors(), 'import')
-							 ->with('message', $this->importer->getImported());
-		}
-	}
+	$importer = App::make('Feijs\ModelImporter\ModelImporter');
+	$importer->setModel('Student');
 ```
 
-To import multiple files you can use the queue distributor
+#### CSV Import Settings
+
+You may override the csv import settings and file encoding with the `setSettings` method.
 
 ```php
-	use Feijs\ModelImporter\Queue\Distributor;
+	$importer->setSettings([
+		'csv' => [
+			'enclosure' => '"',		//Default
+			'delimiter' => ","		//Default
+		],
+		'encoding' => 'UTF-8'		//Default
 
-	/** ... */
-	class ImportController extends \BaseController 
-	{
-		/**
-	     * Controller constructor
-	     *
-	     * Initialize the importer
-	     */
-		public function __construct(Distributor $distributor)
-		{
-	    	$this->distributor = $distributor;
-		}
+	]);
+```
 
-		/* ... */
+#### Input
 
-		/**
-		 * Import multiple csv files
-		 *
-		 * @return Response
-		 */
-		public function postIndex()
-		{
-			$count = $this->distributor->importFiles(
-							Input::file('files'), 
+Input for the importer should include at least:
+
+- `file` (`Symfony\Component\HttpFoundation\File\UploadedFile`),
+- `overwrite`: Update existing data? (`boolean`)
+- `model`: an array of **model attribute** -> **column title** translations
+
+All model names, attributes and column names should be in spinal-case (slugs)
+
+#### Importing single file
+
+```php
+	$success = $importer->import(Input::all());
+
+	//Equivalent
+
+	$success = $importer->import([
+		'file' 		=> Input::file('data.csv'),
+		'overwrite' => false,
+		'student'	=> [
+				'student_id' 	=> 'studentnumber',
+				'phonenumber' 	=> 'mobile',
+				'city' 			=> 'city',
+		]
+	]
+```
+
+#### Importing multiple files
+
+To import multiple files from a single request, use the `Distributor class` and the `importFiles` method. This will queue each file for import. Results will be written to the log.
+
+- The first parameter is an array with files
+- The second parameter is the same input array as on single file import (except the file) 
+- The third parameter is an array with csv & encoding settings
+- The fourth parameter is the classname of the model which is to be imported
+
+```php
+	$distributor = App::make('Feijs\ModelImporter\Queue\Distributor;');
+
+	$jobs_queued = distributor->importFiles(
+							'file' 	=> Input::file('files'),
 							Input::except('csv', 'encoding', 'files'),
 							Input::only('csv', 'encoding'),
-							'SomeModel'
+							'Student'
 						);
+```
 
-			return Redirect::to('customers/import')->with('flash_notice', $count . ' files worden geimporteerd.');
-		}
+### Output
+
+#### Input Validation
+
+To get any validation errors (for the model-importer input) call the `validationErrors` method
+
+```php
+	$importer->validationErrors()
+```
+
+#### Model validation
+
+To get errors encountered during the import (ex. from in-model validation) call the `errors` method
+
+```php
+	$importer->errors()
+```
+
+#### Success
+
+To find the number of data lines which were succesfully imported, call the `getImported` method
+
+```php
+	$importer->getImported()
+```
+
+### Customization
+
+#### Model input slug
+
+By default the input should include the slugged model classname. To change this, override the `getPrefix` method
+
+```php
+	public function getPrefix()
+	{
+		return snake_case(class_basename(get_class($this)));	//default
 	}
 ```
+
+#### Dates
+
+To change which attributes should be parsed as Carbon objects, override the `isDateAttribute` function
+
+```php
+	public function isDateAttribute($key)
+	{
+		return in_array($key, $this->getDates());				//default
+	}
+```
+
