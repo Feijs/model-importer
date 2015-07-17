@@ -93,8 +93,8 @@ class RelationModelImporterTest extends MITestCase
 
         /* Expectation */
         $relation = m::mock('alias:Illuminate\Database\Eloquent\Relations\BelongsToMany');
-        $relation->shouldReceive('getForeignKey')->once()->andReturn('child_id');
-        $relation->shouldReceive('getOtherKey')->once()->andReturn('father_id');
+        $relation->shouldReceive('getForeignKey')->once()->andReturn('father_id');
+        $relation->shouldReceive('getOtherKey')->once()->andReturn('child_id');
         $relation->shouldReceive('getTable')->once()->andReturn('father_childeren');
         $relation->shouldReceive('getRelated')->once()->andReturn($this->importable_model);
 

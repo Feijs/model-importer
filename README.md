@@ -18,12 +18,6 @@ Add the package in `composer.json` and run `composer update`
 	...
 	"feijs/model-importer": "dev-master"
 }
-"repositories": [ 
-	{
-		"type": "vcs",
-        "url": "https://github.com/Feijs/model-importer" 
-    }
-],
 ```
 
 Add the ServiceProvider to the providers in `config\app.php`
@@ -120,16 +114,16 @@ Input for the importer should include at least:
 - `file` (`Symfony\Component\HttpFoundation\File\UploadedFile`),
 - `overwrite`: Update existing data? (`boolean`)
 - `model`: an array of **model attribute** -> **column title** translations
+- `defaults`: an array of **models** -> **attributes** -> **default value**
 
 All model names, attributes and column names should be in spinal-case (slugs)
 
-#### Importing single file
+#### Importing a single file
 
 ```php
 	$success = $importer->import(Input::all());
 
-	//Equivalent
-
+	//Equivalent with example input:
 	$success = $importer->import([
 		'file' 		=> Input::file('data.csv'),
 		'overwrite' => false,
@@ -137,8 +131,11 @@ All model names, attributes and column names should be in spinal-case (slugs)
 				'student_id' 	=> 'studentnumber',
 				'phonenumber' 	=> 'mobile',
 				'city' 			=> 'city',
+		],
+		'defaults'  => [ 
+				'student' => [ 'city' => 'Amsterdam' ]
 		]
-	]
+	]);
 ```
 
 #### Importing multiple files
