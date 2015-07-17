@@ -65,8 +65,8 @@ class RelationModelImporter extends AbstractModelImporter
             {
                 $this->is_parent = false;
                 $this->pivot_table = $function_call->getTable();
-                $this->local_key_attribute = $function_call->getForeignKey();
-                $this->parent_key_attribute = $function_call->getOtherKey();
+                $this->local_key_attribute = $function_call->getOtherKey();
+                $this->parent_key_attribute = $function_call->getForeignKey();
                 break;
             }
             case 'HasOne':
@@ -107,7 +107,9 @@ class RelationModelImporter extends AbstractModelImporter
             }
 
             if(!$model_instance->save()) { 
-                $this->errorMessageBag->merge($model_instance->getErrors());
+            	if($this->model_validation) {
+                	$this->errorMessageBag->merge($model_instance->getErrors());
+                }
                 return null;
             }
 
@@ -137,11 +139,11 @@ class RelationModelImporter extends AbstractModelImporter
      */
     protected function initMatchData($related) 
     {
-        if(!is_null($this->pivot_table) || $this->is_parent) 
-            return [];
-        else
-            return [$this->parent_key_attribute => $related->id];
-
+    	$data = [];
+    	if(is_null($this->pivot_table) && !$this->is_parent) {
+            $data[$this->parent_key_attribute] = $related->id;
+        }
+        return $data;
     }
 
     public function isParent() { return $this->is_parent; }

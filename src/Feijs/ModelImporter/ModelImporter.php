@@ -88,35 +88,6 @@ class ModelImporter extends AbstractModelImporter
     }
 
     /**
-     * Initialize the model class to import
-     *
-     * @param Model\ImportableInterface $importable_model
-     */
-    public function setModel(ImportableModel $importable_model)
-    {
-        parent::setModel($importable_model);
-
-        $this->initRelationImporters();
-    }
-
-    /** Load model importers for related models */
-    protected function initRelationImporters()
-    {
-        foreach($this->importable_model->getImportRelations() as $relation)
-        {
-            $relation_importer = new RelationModelImporter($this->db, $this->validator);
-            $relation_importer->setRelation($relation, $this->importable_model);
-
-            if($relation_importer->isParent()) {
-                $this->parents[] = $relation_importer;
-            }
-            else {
-                $this->children[] = $relation_importer;
-            }
-        }
-    }
-
-    /**
      * Load from input file
      * @param UploadedFile $file
      */
@@ -168,7 +139,9 @@ class ModelImporter extends AbstractModelImporter
 
                 if(!$model_instance->save()) 
                 { 
-                    $this->errorMessageBag->merge($model_instance->getErrors());
+                	if($this->model_validation) {
+                    	$this->errorMessageBag->merge($model_instance->getErrors());
+                    }
                     continue;
                 }
 

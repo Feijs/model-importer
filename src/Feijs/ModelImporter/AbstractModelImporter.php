@@ -94,19 +94,29 @@ abstract class AbstractModelImporter
     protected $num_imported;
 
     /** 
-     * Injected dependecy objects
-     * @var type
-     */
-    protected $db;
-    protected $validator;
-
-    /** 
      * Loaded model form prefix
      * @var string
      */
     protected $prefix;
 
+    /**
+     * Match attributes as set (true) or individually (false)
+     * @var boolean
+     */
     protected $set_matching;
+
+    /** 
+     * Loaded model uses Laravel-Model-Validation
+     * @var boolean
+     */
+    protected $model_validation;
+
+    /** 
+     * Injected dependecy objects
+     * @var type
+     */
+    protected $db;
+    protected $validator;
 
     /**
      * Construct new ModelImporter
@@ -128,8 +138,8 @@ abstract class AbstractModelImporter
         $this->injected_data = null;
         $this->injected_data_pairs = [];
 
-        $this->set_matching = true;
-        //$this->set_matching = \Config::get('model-importer::config.set_matching'); //aaaargh!
+        Config::addNamespace('model-importer', __DIR__.'/../../config');
+        $this->set_matching = Config::get('model-importer::config.set_matching');
     }
 
     /**
@@ -141,7 +151,29 @@ abstract class AbstractModelImporter
     {
         $this->importable_model = $importable_model;
         $this->prefix = $this->importable_model->getPrefix();
+        $this->model_validation = method_exists($importable_model, 'getErrors');
+
+        $this->initRelationImporters();
     } 
+
+
+    /** Load model importers for related models */
+    protected function initRelationImporters()
+    {
+        foreach($this->importable_model->getImportRelations() as $relation)
+        {
+            $relation_importer = new RelationModelImporter($this->db, $this->validator);
+            $relation_importer->setRelation($relation, $this->importable_model);
+
+            if($relation_importer->isParent()) {
+                $this->parents[] = $relation_importer;
+            }
+            else {
+                $this->children[] = $relation_importer;
+            }
+        }
+    }
+
 
     /**
      * Return whether the importer is properly initialized
@@ -276,6 +308,10 @@ abstract class AbstractModelImporter
         {
             if( !is_null($row->$external_name) ) {
                 $match_data[$internal_name] = $row->$external_name;
+            }
+            //Check for default values
+            else if(isset($this->default_data[$internal_name])) {
+                $match_data[$internal_name] = $this->default_data[$internal_name];
             }
             else if( !is_null($value = $this->getInjectedValue($external_name, $row)) )
             {
