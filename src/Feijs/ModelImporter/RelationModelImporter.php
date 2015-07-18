@@ -28,8 +28,8 @@ class RelationModelImporter extends AbstractModelImporter
     protected $local_key_attribute;
 
     /** 
-     * (Optional) name of pivot table (for the relation with parent)
-     * @var string
+     * (Optional) name of pivot table
+     * @var string|null
      */
     protected $pivot_table;
 
@@ -39,6 +39,12 @@ class RelationModelImporter extends AbstractModelImporter
      */
     protected $is_parent;
 
+	/** 
+     * Relation to import
+     * @var string
+     */
+    protected $relation;
+
     /** 
      * Set the parent -> child relation
      *
@@ -47,6 +53,7 @@ class RelationModelImporter extends AbstractModelImporter
      */
     public function setRelation($relation, $parent)
     {
+    	$this->relation = $relation;
         $function_call = call_user_func_array(array($parent, $relation), []);
 
         $type = class_basename(get_class($function_call));
@@ -115,10 +122,7 @@ class RelationModelImporter extends AbstractModelImporter
 
             //Insert pivot table relation
             if(!is_null($this->pivot_table)) {
-                $this->db->table($this->pivot_table)->insert([
-                    $this->parent_key_attribute => $related_model->id,
-                    $this->local_key_attribute => $model_instance->id
-                ]);
+            	call_user_func_array(array($related_model, $this->relation), [])->sync([$model_instance->id], false);
             }
             elseif($this->is_parent)
             {
