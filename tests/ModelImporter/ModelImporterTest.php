@@ -47,7 +47,6 @@ class ModelImporterTest extends MITestCase
         $this->file_importer = m::mock('Maatwebsite\Excel\Excel');
         $this->file = m::mock('Symfony\Component\HttpFoundation\File\UploadedFile');
         $this->importable_model = m::mock('Feijs\ModelImporter\Model\ImportableInterface');
-        //$this->reflection = new ReflectionObject( $this->model_importer );
     }
 
     public function createVars()
@@ -106,6 +105,20 @@ class ModelImporterTest extends MITestCase
 
         /* Execution */
         $this->model_importer->setModel($this->importable_model);
+    }
+
+	public function testFailedValidation() 
+    {
+		/* Preparation */
+        $this->model_importer = 
+            m::mock('Feijs\ModelImporter\ModelImporter[initialized]', 
+                    array($this->db, App::make('Illuminate\Validation\Factory'), $this->file_importer)
+            );
+		$this->model_importer->shouldReceive('initialized')->once()->andReturn(true);
+
+        /* Execution */
+        $this->assertFalse($this->model_importer->import( [] ));
+        $this->assertCount(3, $this->model_importer->validationErrors());
     }
 
     /*---------------------------------

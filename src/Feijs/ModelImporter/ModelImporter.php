@@ -26,7 +26,7 @@ class ModelImporter extends AbstractModelImporter
      * Loaded row data
      * @var RowCollection
      */
-    protected $loaded_data;
+    protected $loaded_data = null;
 
     /** 
      * Input file encoding
