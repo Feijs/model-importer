@@ -88,6 +88,7 @@ class ModelImporterTest extends MITestCase
         /* Expectation */
         $this->file->shouldReceive('getRealPath')->once()->andReturn('dir');
 
+        $this->file_importer->shouldReceive('setValueBinder')->once()->andReturn($this->file_importer);
         $this->file_importer->shouldReceive('load')->once()->with('dir', m::any());
         
         /* Execution */

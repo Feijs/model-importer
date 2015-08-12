@@ -102,7 +102,8 @@ class ModelImporter extends AbstractModelImporter
             $path = $file->getRealPath();
         }
 
-        $this->loaded_data = $this->file_importer->load($path, $this->encoding);
+        $binder = new MIValueBinder;
+        $this->loaded_data = $this->file_importer->setValueBinder($binder)->load($path, $this->encoding);
     }
 
     /** 
