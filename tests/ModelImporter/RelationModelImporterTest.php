@@ -1,12 +1,11 @@
 <?php
 
-use Mockery as m;
 use Feijs\ModelImporter\RelationModelImporter;
+use Mockery as m;
 
 /**
- * RelationModelImporter class tests
+ * RelationModelImporter class tests.
  *
- * @package    Feijs/ModelImporter
  * @author     Mike Feijs <mfeijs@gmail.com>
  * @copyright  (c) 2015, Mike Feijs
  */
@@ -20,12 +19,12 @@ class RelationModelImporterTest extends MITestCase
 
     public $importable_model;
 
-	public function setUp()
-	{
-		parent::setUp();
+    public function setUp()
+    {
+        parent::setUp();
 
         $this->setMocks();
-	}
+    }
 
     public function tearDown()
     {
@@ -58,7 +57,7 @@ class RelationModelImporterTest extends MITestCase
     {
         /* Preparation */
         $this->model_importer = new RelationModelImporter($this->db, $this->validator);
-        $this->reflection = new ReflectionObject( $this->model_importer );
+        $this->reflection = new ReflectionObject($this->model_importer);
 
         /* Expectation */
         $relation = m::mock('alias:Illuminate\Database\Eloquent\Relations\BelongsTo');
@@ -89,7 +88,7 @@ class RelationModelImporterTest extends MITestCase
     {
         /* Preparation */
         $this->model_importer = new RelationModelImporter($this->db, $this->validator);
-        $this->reflection = new ReflectionObject( $this->model_importer );
+        $this->reflection = new ReflectionObject($this->model_importer);
 
         /* Expectation */
         $relation = m::mock('alias:Illuminate\Database\Eloquent\Relations\BelongsToMany');
@@ -116,5 +115,4 @@ class RelationModelImporterTest extends MITestCase
                                        ->getValue($this->model_importer)
                             );
     }
-
 }

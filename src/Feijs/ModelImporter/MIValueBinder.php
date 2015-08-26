@@ -1,25 +1,27 @@
-<?php namespace Feijs\ModelImporter;
+<?php
+
+namespace Feijs\ModelImporter;
 
 use PHPExcel_Cell;
+use PHPExcel_Cell_DataType;
+use PHPExcel_Cell_DefaultValueBinder;
+use PHPExcel_Cell_IValueBinder;
 use PHPExcel_RichText;
 use PHPExcel_Shared_String;
-use PHPExcel_Cell_DataType;
-use PHPExcel_Cell_IValueBinder;
-use PHPExcel_Cell_DefaultValueBinder;
 
 /** 
  * Override any numeric columns to be interpreted as string
- *  to avoid PHPExcel trimming leading & trailing zeros
- *  
+ *  to avoid PHPExcel trimming leading & trailing zeros.
  */
 class MIValueBinder extends PHPExcel_Cell_DefaultValueBinder implements PHPExcel_Cell_IValueBinder
 {
     /**
-     * Bind value to a cell
+     * Bind value to a cell.
      *
-     * @param PHPExcel_Cell $cell    Cell to bind value to
-     * @param mixed $value            Value to bind in cell
-     * @return boolean 
+     * @param PHPExcel_Cell $cell  Cell to bind value to
+     * @param mixed         $value Value to bind in cell
+     *
+     * @return bool
      */
     public function bindValue(PHPExcel_Cell $cell, $value = null)
     {
@@ -36,7 +38,7 @@ class MIValueBinder extends PHPExcel_Cell_DefaultValueBinder implements PHPExcel
         }
 
         $type = self::dataTypeForValue($value);
-        if($type == PHPExcel_Cell_DataType::TYPE_NUMERIC) {
+        if ($type == PHPExcel_Cell_DataType::TYPE_NUMERIC) {
             $type = PHPExcel_Cell_DataType::TYPE_STRING;
         }
 

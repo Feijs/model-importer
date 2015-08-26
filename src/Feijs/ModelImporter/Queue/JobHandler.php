@@ -1,26 +1,27 @@
-<?php namespace Feijs\ModelImporter\Queue;
+<?php
 
-use Illuminate\Log\Writer as Log;
+namespace Feijs\ModelImporter\Queue;
+
 use Feijs\ModelImporter\ModelImporter;
-use Feijs\ModelImporter\Model\ImportableInterface as ImportableModel;
+use Illuminate\Log\Writer as Log;
 
 /**
- * Queue job handler for model-importing
+ * Queue job handler for model-importing.
  *
- * @package    Feijs/ModelImporter
  * @author     Mike Feijs <mfeijs@gmail.com>
  * @copyright  (c) 2015, Mike Feijs
  */
-class JobHandler 
+class JobHandler
 {
     /**
-     * Log import warnings
-     * @var boolean
+     * Log import warnings.
+     *
+     * @var bool
      */
     protected $log_import = false;
 
     /**
-     * Dependencies
+     * Dependencies.
      *
      * @var Type
      */
@@ -38,44 +39,44 @@ class JobHandler
     }
 
     /**
-     * Job handler
+     * Job handler.
+     *
      * @param Illuminate\Queue\Jobs\Job $job
      * @param string[]
      */
     public function fire($job, $data)
     {
-		if(is_null($data) || $job->attempts() > 2) {
+        if (is_null($data) || $job->attempts() > 2) {
             $this->log->error('Failed importing job', $data);
             $job->delete();
+
             return;
         }
 
         //Extract data
         $input = $data['input'];
         $settings = $data['settings'];
-        $importable_model = new $data['importable-model'];
+        $importable_model = new $data['importable-model']();
 
         //Initialize importer
         $this->importer->setModel($importable_model);
         $this->importer->setSettings($settings);
 
         //Import data
-        if( !$this->importer->import($input) ) 
-        {
+        if (!$this->importer->import($input)) {
             $this->log->error('Import job validation errors', $this->importer->validationErrors()->toArray());
             $job->delete();
+
             return;
         }
 
         //Log results
-        if($this->log_import) 
-        {
+        if ($this->log_import) {
             $this->log->warning('Import job errors', $this->importer->errors()->toArray());
         }
 
         $this->log->info('Import job result', [$data['importable-model'] => $this->importer->getImported()]);
 
-        $job->delete();	
+        $job->delete();
     }
-
 }
