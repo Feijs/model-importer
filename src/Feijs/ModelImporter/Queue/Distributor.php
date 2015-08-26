@@ -1,26 +1,26 @@
-<?php namespace Feijs\ModelImporter\Queue;
+<?php
 
-use Feijs\ModelImporter\ModelImporter;
+namespace Feijs\ModelImporter\Queue;
+
 use Illuminate\Queue\QueueManager as Queue;
 
 /**
- * Work load distributor for model-importing
+ * Work load distributor for model-importing.
  *
- * @package    Feijs/ModelImporter
  * @author     Mike Feijs <mfeijs@gmail.com>
  * @copyright  (c) 2015, Mike Feijs
  */
 class Distributor
 {
     /**
-     * Dependencies
+     * Dependencies.
      *
      * @var Type
      */
     protected $queue;
 
     /**
-     * Create a new distributor
+     * Create a new distributor.
      *
      * @return void
      */
@@ -30,23 +30,23 @@ class Distributor
     }
 
     /**
-     * Import muliple files
+     * Import muliple files.
      *
      * @param string[] $input
-     * @return boolean
+     *
+     * @return bool
      */
     public function importFiles($files, $input, $settings, $importable_model_class)
     {
         $count = 0;
         $data = [
             'settings'          => $settings,
-            'importable-model'  => $importable_model_class
+            'importable-model'  => $importable_model_class,
         ];
 
-        foreach($files as $file)
-        {
+        foreach ($files as $file) {
             //Move file from tmp folder
-            $moved_file = $file->move(storage_path() . '/uploads');
+            $moved_file = $file->move(storage_path().'/uploads');
             $data['input'] = array_merge($input, ['path' => $moved_file->getRealPath()]);
 
             //Push new import job to queue stack
@@ -54,7 +54,6 @@ class Distributor
             $count++;
         }
 
-        return $count;       
-	}
-
+        return $count;
+    }
 }

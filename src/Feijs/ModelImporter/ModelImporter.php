@@ -1,51 +1,52 @@
-<?php namespace Feijs\ModelImporter;
+<?php
 
+namespace Feijs\ModelImporter;
+
+use Illuminate\Database\DatabaseManager as DB;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Validation\Factory as Validator;
-use Illuminate\Database\DatabaseManager as DB;
+use Maatwebsite\Excel\Excel as FileImporter;
+use Symfony\Component\HttpFoundation\File\File;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 
-use Maatwebsite\Excel\Excel as FileImporter;
-use Feijs\ModelImporter\Model\ImportableInterface as ImportableModel;
-
-use Symfony\Component\HttpFoundation\File\File;
-
 /**
- * ModelImporter class
+ * ModelImporter class.
  *
  * Generic functionality for importing Eloquent Models from
  *  input files (using ExcelFile)
  *
- * @package    Feijs/ModelImporter
  * @author     Mike Feijs <mfeijs@gmail.com>
  * @copyright  (c) 2015, Mike Feijs
  */
 class ModelImporter extends AbstractModelImporter
 {
     /** 
-     * Loaded row data
+     * Loaded row data.
+     *
      * @var RowCollection
      */
     protected $loaded_data = null;
 
     /** 
-     * Input file encoding
+     * Input file encoding.
+     *
      * @var string
      */
     protected $encoding;
 
     /** 
-     * Injected dependecy objects
+     * Injected dependecy objects.
+     *
      * @var type
      */
     protected $file_importer;
 
     /**
-     * Construct new ModelImporter
+     * Construct new ModelImporter.
      *
      * @param Validator
      */
-    public function __construct(DB $db, Validator $validator, FileImporter $file_importer) 
+    public function __construct(DB $db, Validator $validator, FileImporter $file_importer)
     {
         parent::__construct($db, $validator);
 
@@ -54,20 +55,25 @@ class ModelImporter extends AbstractModelImporter
     }
 
     /**
-     * Entry function for importing from controllers
+     * Entry function for importing from controllers.
      *
      * @param string[] $input
-     * @return boolean
+     *
+     * @return bool
      */
-    public function import($input) 
+    public function import($input)
     {
         $this->num_imported = 0;
 
         //Check if importer is properly initialized
-        if(!$this->initialized()) return false;
+        if (!$this->initialized()) {
+            return false;
+        }
 
         //Validate input
-        if(!$this->validate($input)) return false;
+        if (!$this->validate($input)) {
+            return false;
+        }
 
         $this->setOverwrite($input['overwrite']);
 
@@ -88,66 +94,66 @@ class ModelImporter extends AbstractModelImporter
     }
 
     /**
-     * Load from input file
+     * Load from input file.
+     *
      * @param UploadedFile $file
      */
     public function loadFile($input)
     {
         //Select correct path based on input
-        if(array_key_exists('file', $input)) {
+        if (array_key_exists('file', $input)) {
             $path = $input['file']->getRealPath();
-        }
-        elseif(array_key_exists('path', $input)) {
+        } elseif (array_key_exists('path', $input)) {
             $file = new File($input['path']);
             $path = $file->getRealPath();
         }
 
-        $binder = new MIValueBinder;
+        $binder = new MIValueBinder();
         $this->loaded_data = $this->file_importer->setValueBinder($binder)->load($path, $this->encoding);
     }
 
     /** 
-     * Import data from input file and create new (or update) model instances in DB
+     * Import data from input file and create new (or update) model instances in DB.
+     *
      * @return int
      */
     protected function importModels()
     {
         $success = 0;
 
-        if(is_null($this->loaded_data)) return 0;
+        if (is_null($this->loaded_data)) {
+            return 0;
+        }
 
-        if(Config::get('model-importer::config.disable_query_log')) {   //Limits memory usage
-            $this->db->connection()->disableQueryLog();    
+        if (Config::get('model-importer::config.disable_query_log')) {   //Limits memory usage
+            $this->db->connection()->disableQueryLog();
         }
         $this->db->beginTransaction();
 
         //Get only data as specified in name arrays
         $this->loaded_data->ignoreEmpty(false);
-        $data = $this->loaded_data->get( $this->getNamesToLoad());
-        
-        foreach($data as $row) 
-        {
+        $data = $this->loaded_data->get($this->getNamesToLoad());
+
+        foreach ($data as $row) {
             $model_instance = $this->matchModelFromRow($row);
-        
-            if($model_instance != null) 
-            {
+
+            if ($model_instance != null) {
                 $model_instance = $this->importDataFromRow($row, $model_instance);
 
                 //Import parents before saving
-                foreach($this->parents as $parent) {
+                foreach ($this->parents as $parent) {
                     $parent->importModelFromRow($row, $model_instance);
                 }
 
-                if(!$model_instance->save()) 
-                { 
-                	if($this->model_validation) {
-                    	$this->errorMessageBag->merge($model_instance->getErrors());
+                if (!$model_instance->save()) {
+                    if ($this->model_validation) {
+                        $this->errorMessageBag->merge($model_instance->getErrors());
                     }
                     continue;
                 }
 
                 //Import children after saving
-                foreach($this->children as $child) {
+                foreach ($this->children as $child) {
                     $child->importModelFromRow($row, $model_instance);
                 }
                 $success++;
@@ -160,39 +166,55 @@ class ModelImporter extends AbstractModelImporter
     }
 
     /**
-     * Return validation rules for this and child models
+     * Return validation rules for this and child models.
+     *
      * @return string[]
      */
-    protected function getValidationRules() 
+    protected function getValidationRules()
     {
         $rules = parent::getValidationRules();
         $rules['file'] = 'required_without:path|mimes:xlsx,xls,csv,txt';     //valid file types
         $rules['path'] = 'required_without:file';     //valid file types
-            
+
         return $rules;
     }
 
     /**
-     * Set any global settings
+     * Set any global settings.
+     *
      * @return 
      */
-    public function setSettings($input) 
-    { 
-        if(array_key_exists('csv', $input)) {
-            if(array_key_exists('enclosure', $input['csv'])) $this->file_importer->setDelimiter($input['csv']['enclosure']);
-            if(array_key_exists('delimiter', $input['csv'])) $this->file_importer->setDelimiter($input['csv']['delimiter']);
+    public function setSettings($input)
+    {
+        if (array_key_exists('csv', $input)) {
+            if (array_key_exists('enclosure', $input['csv'])) {
+                $this->file_importer->setDelimiter($input['csv']['enclosure']);
+            }
+            if (array_key_exists('delimiter', $input['csv'])) {
+                $this->file_importer->setDelimiter($input['csv']['delimiter']);
+            }
         }
-        if(array_key_exists('encoding', $input)) $this->setEncoding($input['encoding']);
+        if (array_key_exists('encoding', $input)) {
+            $this->setEncoding($input['encoding']);
+        }
     }
 
-    public function setEncoding($value) { $this->encoding = $value; }
+    public function setEncoding($value)
+    {
+        $this->encoding = $value;
+    }
 
     public function getExcelData($columns)
     {
-        if(is_null($this->loaded_data)) return null;
+        if (is_null($this->loaded_data)) {
+            return;
+        }
 
         return $this->loaded_data->get($columns);
     }
 
-    public function formatDates($setting) { $this->file_importer->formatDates($setting); }
+    public function formatDates($setting)
+    {
+        $this->file_importer->formatDates($setting);
+    }
 }

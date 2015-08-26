@@ -1,12 +1,11 @@
 <?php
 
-use Mockery as m;
 use Feijs\ModelImporter\ModelImporter;
+use Mockery as m;
 
 /**
- * ModelImporter class tests
+ * ModelImporter class tests.
  *
- * @package    Feijs/ModelImporter
  * @author     Mike Feijs <mfeijs@gmail.com>
  * @copyright  (c) 2015, Mike Feijs
  */
@@ -22,13 +21,13 @@ class ModelImporterTest extends MITestCase
     public $sample_input;
     public $importable_model;
 
-	public function setUp()
-	{
-		parent::setUp();
+    public function setUp()
+    {
+        parent::setUp();
 
         $this->setMocks();
         $this->createVars();
-	}
+    }
 
     public function tearDown()
     {
@@ -54,19 +53,19 @@ class ModelImporterTest extends MITestCase
         $this->sample_input = [
             'file'                          => $this->file,
             'overwrite'                     => 'false',
-            'some_student' => [
+            'some_student'                  => [
                 'firstname' => 'Voornaam',
                 'lastname'  => 'Achternaam',
-                'email'     => 'E-mail Adres'
+                'email'     => 'E-mail Adres',
             ],
             'defaults' => [
                 'some_student' => [
-                    'email'    => 'test@provider.com'
-                ]
+                    'email'    => 'test@provider.com',
+                ],
             ],
             'partner' => [
-                'lastname'  => 'Achternaam (partner)'
-            ]
+                'lastname'  => 'Achternaam (partner)',
+            ],
         ];
     }
 
@@ -90,7 +89,7 @@ class ModelImporterTest extends MITestCase
 
         $this->file_importer->shouldReceive('setValueBinder')->once()->andReturn($this->file_importer);
         $this->file_importer->shouldReceive('load')->once()->with('dir', m::any());
-        
+
         /* Execution */
         $this->model_importer->loadFile(['file' => $this->file]);
     }
@@ -108,17 +107,17 @@ class ModelImporterTest extends MITestCase
         $this->model_importer->setModel($this->importable_model);
     }
 
-	public function testFailedValidation() 
+    public function testFailedValidation()
     {
-		/* Preparation */
-        $this->model_importer = 
-            m::mock('Feijs\ModelImporter\ModelImporter[initialized]', 
-                    array($this->db, App::make('Illuminate\Validation\Factory'), $this->file_importer)
+        /* Preparation */
+        $this->model_importer =
+            m::mock('Feijs\ModelImporter\ModelImporter[initialized]',
+                    [$this->db, App::make('Illuminate\Validation\Factory'), $this->file_importer]
             );
-		$this->model_importer->shouldReceive('initialized')->once()->andReturn(true);
+        $this->model_importer->shouldReceive('initialized')->once()->andReturn(true);
 
         /* Execution */
-        $this->assertFalse($this->model_importer->import( [] ));
+        $this->assertFalse($this->model_importer->import([]));
         $this->assertCount(3, $this->model_importer->validationErrors());
     }
 
@@ -126,7 +125,7 @@ class ModelImporterTest extends MITestCase
      * Test import function in fases,
      */
 
-    public function testUnitialized() 
+    public function testUnitialized()
     {
         $this->model_importer = new ModelImporter($this->db, $this->validator, $this->file_importer);
         $this->assertFalse($this->model_importer->import($this->sample_input));
@@ -135,12 +134,12 @@ class ModelImporterTest extends MITestCase
     public function importMocks()
     {
         /* Preparation */
-        $this->model_importer = 
-            m::mock('Feijs\ModelImporter\ModelImporter[loadFile,initialized]', 
-                    array($this->db, $this->validator, $this->file_importer)
+        $this->model_importer =
+            m::mock('Feijs\ModelImporter\ModelImporter[loadFile,initialized]',
+                    [$this->db, $this->validator, $this->file_importer]
             );
 
-        /* Expectation */  
+        /* Expectation */
         $this->model_importer->shouldReceive('initialized')->once()->andReturn(true);
         $this->model_importer->shouldReceive('loadFile')->once()->with($this->sample_input);
 
@@ -161,11 +160,11 @@ class ModelImporterTest extends MITestCase
 
         $expected = [
             'firstname' => 'voornaam',
-            'lastname' => 'achternaam',
-            'email' => 'e_mail_adres'
+            'lastname'  => 'achternaam',
+            'email'     => 'e_mail_adres',
         ];
 
-        /** Execution */
+        /* Execution */
         $this->model_importer->setModel($this->importable_model);
         $this->model_importer->import($this->sample_input);
 
@@ -181,7 +180,7 @@ class ModelImporterTest extends MITestCase
             'email' => 'test@provider.com',
         ];
 
-        /** Execution */
+        /* Execution */
         $this->model_importer->setModel($this->importable_model);
         $this->model_importer->import($this->sample_input);
 

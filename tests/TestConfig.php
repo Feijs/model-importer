@@ -1,10 +1,10 @@
 <?php
+
 use Mockery as m;
 
 /**
- * Package config test
+ * Package config test.
  *
- * @package    Feijs/ModelImporter
  * @author     Mike Feijs <mfeijs@gmail.com>
  * @copyright  (c) 2015, Mike Feijs
  */
